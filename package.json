@@ -1,15 +1,15 @@
 {
   "name": "smart-agri-service",
   "description": "Smart Agri Plugin for predicting water tank level.",
-  "version": "1.0.2",
-  "author": "Reekoh, Inc.",
+  "version": "1.0.0",
+  "author": "mauricio.roderick@yahoo.com",
   "main": "app.js",
   "scripts": {
     "test": "gulp test"
   },
   "repository": {
     "type": "git",
-    "url": "https://bitbucket.org/p34/reekoh-plugins"
+    "url": "https://github.com/mauricio-roderick/smart-agri-custom-plugin"
   },
   "dependencies": {
     "adal-node": "https://github.com/Reekoh/azure-activedirectory-library-for-nodejs/archive/master.tar.gz",

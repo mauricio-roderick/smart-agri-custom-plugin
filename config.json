@@ -1,0 +1,62 @@
+{
+  "pbi-tenant": {
+	"label": "Power BI - Tenant ID",
+	"type": "String",
+	"required": true,
+	"help": "Azure AD Tenant ID to be used for authentication."
+  },
+  "pbi-username": {
+	"label": "Power BI - Username",
+	"type": "String",
+	"required": true,
+	"help": "Username to use for authentication."
+  },
+  "pbi-password": {
+	"label": "Power BI - Password",
+	"type": "Password",
+	"required": true,
+	"help": "Password to use for authentication."
+  },
+  "pbi-client_id": {
+	"label": "Power BI - Client Id",
+	"type": "String",
+	"required": true,
+	"help": "The OAuth client id of the calling Azure AD application."
+  },
+  "pbi-client_secret": {
+	"label": "Power BI - Client Secret",
+	"type": "Password",	
+	"required": true,
+	"help": "The OAuth client secret of the calling Azure AD application."
+  },
+  "pbi-dataset": {
+	"label": "Power BI - Dataset",
+	"type": "String",
+	"required": true,
+	"help": "The Power BI Dataset to send the data to."
+  },
+  "pbi-table": {
+	"label": "Power BI - Table",
+	"type": "String",
+	"required": true,
+	"help": "The Power BI Table to send the data to."
+  },
+  "aml-url": {
+	"label": "Azure ML Service URI",
+	"type": "String",
+	"required": true,
+	"help": "Endpoint of the machine learning webservice (Request/Response method)"
+  },
+  "aml-api_key": {
+	"label": "Azure ML API Key",
+	"type": "Password",
+	"required": true,
+	"help": "Publisher API key to be used for authenticating requests."
+  },
+  "fio-api_key": {
+	"label": "Forecast IO API Key",
+	"type": "Password",
+	"required": true,
+	"help": "Enter the generated API Key for Dark Sky Forecast."
+  }
+}

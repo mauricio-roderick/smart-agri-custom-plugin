@@ -43,6 +43,7 @@ PowerBITask.prototype = {
 		});
 	},
 	clear: function (callback) {
+		
 		request.delete({
 			url: `https://api.powerbi.com/v1.0/myorg/datasets/${this.dataset}/tables/${this.table}/rows`,
 			auth: {

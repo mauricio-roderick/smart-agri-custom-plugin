@@ -1,7 +1,7 @@
 {
   "name": "smart-agri-service",
   "description": "Smart Agri Plugin for predicting water tank level.",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "author": "mauricio.roderick@yahoo.com",
   "main": "app.js",
   "scripts": {

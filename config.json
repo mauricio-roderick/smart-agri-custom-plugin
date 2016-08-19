@@ -58,5 +58,12 @@
 	"type": "Password",
 	"required": true,
 	"help": "Enter the generated API Key for Dark Sky Forecast."
+  },
+  "days_to_predict": {
+	"label": "Number of days to predict",
+	"type": "String",
+	"required": true,
+	"default": 7,
+	"help": "Enter the number of days to predict. Must be a in numeric form. Defaults to 7"
   }
 }

@@ -1,7 +1,10 @@
 'use strict';
 
-const DATASET_ID = '324c0b3e-daa1-428d-80d3-bf74b2b0eae5',
-	  TABLE_NAME = 'waterLevel',
+const DATASET_ID = '1aa65408-fa44-4b7d-83ba-30640a36cc19',
+	  TABLE_NAME = 'waterTankConditioPrediction',
+	  AML_URL = 'https://ussouthcentral.services.azureml.net/workspaces/20df39f0ebfb4777b26a06351cb5d2c3/services/dfcb2d34d71848138222cd6f3b2b6872/execute?api-version=2.0&details=true',
+	  AML_API_KEY = 'PSTqmmsU0wATjmZheoDwvObunhqmTsJhM2O9h2NvOJzsaI2aSJvxUfCyGjr/YmPWLC7wclidyd1HOh+oA9Sjbg==',
+	  FIO_API_KEY = 'e05fd6b98abd2b6c95f749d76ed58e4b',
 	  AUTHENTICATION_PARAMETERS = {
 		  tenant: 'reekoh.com',
 		  username: 'demo@reekoh.com',
@@ -13,6 +16,8 @@ const DATASET_ID = '324c0b3e-daa1-428d-80d3-bf74b2b0eae5',
 var cp     = require('child_process'),
 	should = require('should'),
 	moment = require('moment-timezone'),
+	config = require('../config.json'),
+	numDaysToPredict = config.days_to_predict.default,
 	service;
 
 describe('Service', function () {
@@ -53,9 +58,10 @@ describe('Service', function () {
 						'pbi-client_secret': AUTHENTICATION_PARAMETERS.clientSecret,
 						'pbi-dataset': DATASET_ID,
 						'pbi-table': TABLE_NAME,
-						'aml-url': 'https://ussouthcentral.services.azureml.net/workspaces/20df39f0ebfb4777b26a06351cb5d2c3/services/dfcb2d34d71848138222cd6f3b2b6872/execute?api-version=2.0&details=true',
-						'aml-api_key': 'PSTqmmsU0wATjmZheoDwvObunhqmTsJhM2O9h2NvOJzsaI2aSJvxUfCyGjr/YmPWLC7wclidyd1HOh+oA9Sjbg==',
-						'fio-api_key': 'e05fd6b98abd2b6c95f749d76ed58e4b',
+						'aml-url': AML_URL,
+						'aml-api_key': AML_API_KEY,
+						'fio-api_key': FIO_API_KEY,
+						'days_to_predict': numDaysToPredict,
 					}
 				}
 			}, function (error) {
@@ -67,7 +73,8 @@ describe('Service', function () {
 
 	describe('#data', function () {
 		it('should process the data and send back a result', function (done) {
-			this.timeout(8000);
+			this.timeout(numDaysToPredict * 5000);
+
 			var requestId = (new Date()).getTime().toString();
 
 			service.on('message', function (message) {

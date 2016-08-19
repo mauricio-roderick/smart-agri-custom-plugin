@@ -7,8 +7,10 @@ var platform      = require('./platform'),
 	request = require('request'),
 	async = require('async'),
 	moment = require('moment-timezone'),
+	config = require('./config.json'),
 	S = require('string'),
 	fioBaseUrl,
+	numDaysToPredict,
 	powerBITask,
 	azureApiKey,
 	azureUrl;
@@ -32,14 +34,16 @@ var forecastIO = (params, cb) => {
 		else if (response.statusCode !== 200)
 			cb(new Error(response.statusMessage));
 		else {
-			let fioDatum = {
-				datetime: moment.unix(body.currently.time).tz(body.timezone).format(),
-				timestamp: body.currently.time,
-				precip_intensity: body.currently.precipIntensity,
-				temperature: body.currently.temperature,
-				humidity: body.currently.humidity,
-				wind_speed: body.currently.windSpeed,
-			};
+			let dayOfWeek = moment.unix(body.currently.time).tz(body.timezone).format('d'),
+				fioDatum = {
+					datetime: moment.unix(body.currently.time).tz(body.timezone).format(),
+					date: moment.unix(body.currently.time).tz(body.timezone).format('LLLL'),
+					timestamp: body.currently.time,
+					precip_intensity: body.currently.precipIntensity,
+					temperature: body.currently.temperature,
+					humidity: body.currently.humidity,
+					wind_speed: body.currently.windSpeed,
+				};
 
 			cb(null, fioDatum);
 		}
@@ -90,7 +94,7 @@ platform.on('data', function (requestId, data) {
 
 	async.waterfall([
 		(nextFall) => {
-			async.timesSeries(2, function(n, next){
+			async.timesSeries(numDaysToPredict, function(n, next){
 				let params = {
 					'time': moment.unix(data.time).add(n, 'day').format('YYYY-MM-DDTHH:MM:SS'),
 					'lat': data.latitude,
@@ -129,8 +133,10 @@ platform.on('data', function (requestId, data) {
 
 					azureMl(params, (error, amlData) => {
 						let prediction = {
+								order: (n + 1),
 								timestamp: curItem.datetime,
-								water_tank_condition: amlData.Results.output1.value.Values[0][9],
+								date: curItem.date,
+								condition: (amlData.Results.output1.value.Values[0][9]) ? 'Below critical level' : 'Above critical level',
 								probability: amlData.Results.output1.value.Values[0][10]
 							};
 
@@ -181,6 +187,9 @@ platform.once('close', function () {
 });
 
 platform.once('ready', function (options) {
+	numDaysToPredict = options.days_to_predict || config.days_to_predict.default;
+	numDaysToPredict += 1;
+
 	fioBaseUrl = `https://api.forecast.io/forecast/${options['fio-api_key']}/`;
 
 	platform.log('Smart Agri service - Forecast.io has been initialized.');

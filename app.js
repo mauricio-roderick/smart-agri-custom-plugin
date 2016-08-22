@@ -4,6 +4,7 @@ var platform      = require('./platform'),
 	isEmpty       = require('lodash.isempty'),
 	isArray       = require('lodash.isarray'),
 	isPlainObject = require('lodash.isplainobject'),
+	domain = require('domain'),
 	request = require('request'),
 	async = require('async'),
 	moment = require('moment-timezone'),
@@ -132,6 +133,10 @@ platform.on('data', function (requestId, data) {
 					];
 
 					azureMl(params, (error, amlData) => {
+						if (error) {
+							return next(error);
+						}
+
 						let prediction = {
 								order: (n + 1),
 								timestamp: curItem.datetime,
@@ -140,7 +145,7 @@ platform.on('data', function (requestId, data) {
 								probability: amlData.Results.output1.value.Values[0][10]
 							};
 
-						next(error, prediction);
+						next(null, prediction);
 					});
 				}, 
 				function(error, azureResult){
@@ -187,31 +192,40 @@ platform.once('close', function () {
 });
 
 platform.once('ready', function (options) {
-	numDaysToPredict = options.days_to_predict || config.days_to_predict.default;
-	numDaysToPredict += 1;
 
-	fioBaseUrl = `https://api.forecast.io/forecast/${options['fio-api_key']}/`;
+	let d = domain.create();
 
-	platform.log('Smart Agri service - Forecast.io has been initialized.');
+	d.once('error', (error) => {
+		platform.log(error.stack);
+	});
 
-	azureUrl = options['aml-url'];
-	azureApiKey = options['aml-api_key'];
-	platform.log('Smart Agri service - Azure Machine Learning has been initialized.');
+	d.run(() => {
+		numDaysToPredict = options.days_to_predict || config.days_to_predict.default;
+		numDaysToPredict = parseInt(numDaysToPredict) + 1;
 
-	var PowerBITask = require('./utils/powerBITask');
+		fioBaseUrl = `https://api.forecast.io/forecast/${options['fio-api_key']}/`;
 
-	let pbiOptions = {},
-		pbiIndex = 'pbi-',
-		optionKey = '';
+		platform.log('Smart Agri service - Forecast.io has been initialized.');
 
-	for(let k in options) {
-		if (S(k).startsWith(pbiIndex)) {
-			optionKey = S(k).chompLeft(pbiIndex).s;
-			pbiOptions[optionKey] = options[k];
+		azureUrl = options['aml-url'];
+		azureApiKey = options['aml-api_key'];
+		platform.log('Smart Agri service - Azure Machine Learning has been initialized.');
+
+		var PowerBITask = require('./utils/powerBITask');
+
+		let pbiOptions = {},
+			pbiIndex = 'pbi-',
+			optionKey = '';
+
+		for(let k in options) {
+			if (S(k).startsWith(pbiIndex)) {
+				optionKey = S(k).chompLeft(pbiIndex).s;
+				pbiOptions[optionKey] = options[k];
+			}
 		}
-	}
 
-	powerBITask = new PowerBITask(pbiOptions);
-	platform.log('Smart Agri service - Power BI Connector has been initialized.');
-	platform.notifyReady();
+		powerBITask = new PowerBITask(pbiOptions);
+		platform.log('Smart Agri service - Power BI Connector has been initialized.');
+		platform.notifyReady();	
+	});
 });

@@ -57,14 +57,14 @@ var azureMl = (params, cb) => {
 	    'input1': {
 	      'ColumnNames': [
 	        'current_precip_intensity',
-	        'current_temperature',
-	        'current_humidity',
-	        'current_wind_speed',
-	        'previous_precip_intensity',
-	        'previous_temperature',
-	        'previous_humidity',
-	        'previous_wind_speed',
-	        'previous_tank_condition'
+			'current_temperature',
+			'current_humidity',
+			'current_wind_speed',
+			'current_tank_condition',
+			'next_precip_intensity',
+			'next_temperature',
+			'next_humidity',
+			'next_wind_speed'
 	      ],
 	      'Values': [params]
 	    }
@@ -117,35 +117,42 @@ platform.on('data', function (requestId, data) {
 			fioData[0].water_tank_condition = data.water_tank_condition;
 
 			async.timesSeries((fioData.length - 1), (n, next) => {
-					let prevItem = fioData[n],
-						curItem = fioData[(n + 1)];
+					let curDay = fioData[n],
+						nextDay = fioData[(n + 1)],
+						forecastData = {};
+
+					for(let i in curDay) {
+						let index = S(i).humanize().s.toLowerCase();
+						forecastData[index] = curDay[i];
+					}
 
 					let params = [
-						curItem.precipIntensity,
-						curItem.temperature,
-						curItem.humidity,
-						curItem.windSpeed,
-						prevItem.precipIntensity,
-						prevItem.temperature,
-						prevItem.humidity,
-						prevItem.windSpeed,
-						prevItem.water_tank_condition
+						curDay.precip_intensity,
+						curDay.temperature,
+						curDay.humidity,
+						curDay.wind_speed,
+						curDay.water_tank_condition,
+						nextDay.precip_intensity,
+						nextDay.temperature,
+						nextDay.humidity,
+						nextDay.wind_speed
 					];
 
+					// fioData[(n + 1)].water_tank_condition = 0;
+					// next(null, forecastData);
 					azureMl(params, (error, amlData) => {
 						if (error) {
 							return next(error);
 						}
 
-						let prediction = {
-								order: (n + 1),
-								timestamp: curItem.datetime,
-								date: curItem.date,
-								condition: (amlData.Results.output1.value.Values[0][9]) ? 'Below critical level' : 'Above critical level',
-								probability: amlData.Results.output1.value.Values[0][10]
-							};
-
-						next(null, prediction);
+						forecastData.order = (n + 1);
+						forecastData.timestamp = curDay.datetime;
+						forecastData.date = curDay.date;
+						forecastData.condition = (amlData.Results.output1.value.Values[0][9]) ? 'Below critical level' : 'Above critical level';
+						forecastData.probability = amlData.Results.output1.value.Values[0][10];
+						
+						fioData[(n + 1)].water_tank_condition = amlData.Results.output1.value.Values[0][9];
+						next(null, forecastData);
 					});
 				}, 
 				function(error, azureResult){
@@ -153,21 +160,21 @@ platform.on('data', function (requestId, data) {
 					nextFall(error);
 				});
 		},
-		(nextFall) => {
-			powerBITask.init((error) => {
-				nextFall(error);
-			});
-		},
-		(nextFall) => {
-			powerBITask.clear((error) => {
-				nextFall(error);
-			});
-		},
-		(nextFall) => {
-			powerBITask.send(azureMlResult, (error) => {
-				nextFall(error);
-			});
-		}
+		// (nextFall) => {
+		// 	powerBITask.init((error) => {
+		// 		nextFall(error);
+		// 	});
+		// },
+		// (nextFall) => {
+		// 	powerBITask.clear((error) => {
+		// 		nextFall(error);
+		// 	});
+		// },
+		// (nextFall) => {
+		// 	powerBITask.send(azureMlResult, (error) => {
+		// 		nextFall(error);
+		// 	});
+		// }
 	], (error) => {
 		if(error) {
 			platform.sendResult(requestId, null);

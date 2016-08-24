@@ -1,9 +1,9 @@
 'use strict';
 
-const DATASET_ID = '1aa65408-fa44-4b7d-83ba-30640a36cc19',
-	  TABLE_NAME = 'waterTankConditioPrediction',
-	  AML_URL = 'https://ussouthcentral.services.azureml.net/workspaces/20df39f0ebfb4777b26a06351cb5d2c3/services/dfcb2d34d71848138222cd6f3b2b6872/execute?api-version=2.0&details=true',
-	  AML_API_KEY = 'PSTqmmsU0wATjmZheoDwvObunhqmTsJhM2O9h2NvOJzsaI2aSJvxUfCyGjr/YmPWLC7wclidyd1HOh+oA9Sjbg==',
+const DATASET_ID = '329cbe00-e81b-4858-85bb-5df91c27834b',
+	  TABLE_NAME = 'AgriMetrics',
+	  AML_URL = 'https://ussouthcentral.services.azureml.net/workspaces/20df39f0ebfb4777b26a06351cb5d2c3/services/358dc2e24f854c01b1fcb5a4bece863e/execute?api-version=2.0&details=true',
+	  AML_API_KEY = 'ZSpCynDu29TcjyptyXpCYV1X5/FZgmJ4hWlbIvddZ2OfMO0N9m9Ef0A5Xwf3oqavfUqCmoI1/s6TB3xqZYtY2Q==',
 	  FIO_API_KEY = 'e05fd6b98abd2b6c95f749d76ed58e4b',
 	  AUTHENTICATION_PARAMETERS = {
 		  tenant: 'reekoh.com',
@@ -73,7 +73,7 @@ describe('Service', function () {
 
 	describe('#data', function () {
 		it('should process the data and send back a result', function (done) {
-			this.timeout(numDaysToPredict * 5000);
+			this.timeout(numDaysToPredict * 10000);
 
 			var requestId = (new Date()).getTime().toString();
 

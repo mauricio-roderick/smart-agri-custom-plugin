@@ -10,6 +10,7 @@ var platform      = require('./platform'),
 	moment = require('moment-timezone'),
 	config = require('./config.json'),
 	S = require('string'),
+	ucfirst = require('ucfirst'),
 	fioBaseUrl,
 	numDaysToPredict,
 	powerBITask,
@@ -37,10 +38,10 @@ var forecastIO = (params, cb) => {
 		else {
 			let dayOfWeek = moment.unix(body.currently.time).tz(body.timezone).format('d'),
 				fioDatum = {
-					datetime: moment.unix(body.currently.time).tz(body.timezone).format(),
-					date: moment.unix(body.currently.time).tz(body.timezone).format('LLLL'),
-					timestamp: body.currently.time,
-					precip_intensity: body.currently.precipIntensity,
+					date_time: moment.unix(body.currently.time).tz(body.timezone).format(),
+					date: moment.unix(body.currently.time).tz(body.timezone).format('ll'),
+					// timestamp : body.currently.time,
+					precipitation: body.currently.precipIntensity,
 					temperature: body.currently.temperature,
 					humidity: body.currently.humidity,
 					wind_speed: body.currently.windSpeed,
@@ -112,69 +113,74 @@ platform.on('data', function (requestId, data) {
 		},
 		(fioData, nextFall) => {
 			let ctr = 0,
-				predictions = [];
+				water_tank_condition = (data.water_tank_condition) ? 'Above critical level' : 'Below critical level',
+				probability = 1;
 
 			fioData[0].water_tank_condition = data.water_tank_condition;
 
-			async.timesSeries((fioData.length - 1), (n, next) => {
-					let curDay = fioData[n],
-						nextDay = fioData[(n + 1)],
-						forecastData = {};
+			async.timesSeries(fioData.length, (n, next) => {
+				let curDay = fioData[n],
+					nextDay = fioData[(n + 1)],
+					forecastData = {};
 
-					for(let i in curDay) {
-						let index = S(i).humanize().s.toLowerCase();
-						forecastData[index] = curDay[i];
-					}
+				for(let i in curDay) {
+					let index = ucfirst(S(i).humanize().s);
+					forecastData[index] = curDay[i];
+				}
 
+				forecastData.Order = (n + 1);
+				forecastData['Water tank condition'] = water_tank_condition;
+				forecastData.Probability = probability;
+
+				if (nextDay) {
 					let params = [
-						curDay.precip_intensity,
+						curDay.precipitation_intensity,
 						curDay.temperature,
 						curDay.humidity,
 						curDay.wind_speed,
 						curDay.water_tank_condition,
-						nextDay.precip_intensity,
+						nextDay.precipitation_intensity,
 						nextDay.temperature,
 						nextDay.humidity,
 						nextDay.wind_speed
 					];
 
-					// fioData[(n + 1)].water_tank_condition = 0;
-					// next(null, forecastData);
 					azureMl(params, (error, amlData) => {
 						if (error) {
 							return next(error);
 						}
-
-						forecastData.order = (n + 1);
-						forecastData.timestamp = curDay.datetime;
-						forecastData.date = curDay.date;
-						forecastData.condition = (amlData.Results.output1.value.Values[0][9]) ? 'Below critical level' : 'Above critical level';
-						forecastData.probability = amlData.Results.output1.value.Values[0][10];
+						
+						water_tank_condition = (amlData.Results.output1.value.Values[0][9] === '1') ? 'Above critical level' : 'Below critical level';
+						probability = amlData.Results.output1.value.Values[0][10];
 						
 						fioData[(n + 1)].water_tank_condition = amlData.Results.output1.value.Values[0][9];
+						
 						next(null, forecastData);
 					});
-				}, 
-				function(error, azureResult){
-					azureMlResult = azureResult;
-					nextFall(error);
-				});
+				} else {
+					next(null, forecastData);
+				}
+			}, 
+			function(error, azureResult){
+				azureMlResult = azureResult;
+				nextFall(error);
+			});
 		},
-		// (nextFall) => {
-		// 	powerBITask.init((error) => {
-		// 		nextFall(error);
-		// 	});
-		// },
-		// (nextFall) => {
-		// 	powerBITask.clear((error) => {
-		// 		nextFall(error);
-		// 	});
-		// },
-		// (nextFall) => {
-		// 	powerBITask.send(azureMlResult, (error) => {
-		// 		nextFall(error);
-		// 	});
-		// }
+		(nextFall) => {
+			powerBITask.init((error) => {
+				nextFall(error);
+			});
+		},
+		(nextFall) => {
+			powerBITask.clear((error) => {
+				nextFall(error);
+			});
+		},
+		(nextFall) => {
+			powerBITask.send(azureMlResult, (error) => {
+				nextFall(error);
+			});
+		}
 	], (error) => {
 		if(error) {
 			platform.sendResult(requestId, null);
